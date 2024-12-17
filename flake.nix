@@ -71,6 +71,7 @@
         ];
       }
     );
+
     nixosConfigurations = nixpkgs.lib.genAttrs linuxSystems (system: let
       user = "%USER%";
     in
@@ -81,5 +82,6 @@
           home-manager.nixosModules.home-manager
           ./hosts/nixos
         ];
-      });
+      }
+    };
 }
