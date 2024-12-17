@@ -18,6 +18,18 @@
     nix-darwin.url = "github:LnL7/nix-darwin";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
     nix-homebrew.url = "github:zhaofengli-wip/nix-homebrew";
+    homebrew-bundle = {
+      url = "github:homebrew/homebrew-bundle";
+      flake = false;
+    };
+    homebrew-core = {
+      url = "github:homebrew/homebrew-core";
+      flake = false;
+    };
+    homebrew-cask = {
+      url = "github:homebrew/homebrew-cask";
+      flake = false;
+    };
 
     home-manager = {
       url = "github:nix-community/home-manager";
@@ -25,53 +37,50 @@
     };
   };
 
-  outputs = inputs @ { self, nix-darwin, nixpkgs, nix-homebrew, home-manager }:
+  outputs = inputs @ { self, nix-darwin, nixpkgs, nix-homebrew, homebrew-bundle, homebrew-core, homebrew-cask, home-manager }:
 
   let
-    commonHomeConfig = import ./home/common.nix;
+    user = "%USER%";
+    linuxSystems = [ "x86_64-linux", "aarch64-linux" ];
+    darwinSystems = [ "x86_64-darwin", "aarch64-darwin" ];
+    forAllSystems = f: nixpkgs.lib.getAttrs (linuxSystems ++ darwinSystems) f;
 
-    macConfiguration = { config, pkgs, ... }:
-      import ./hosts/mac/configuration.nix { 
-        inherit config pkgs;
-      };
-
-    nixosConfiguration = { config, pkgs, ... }:
-      import ./hosts/linux/configuration.nix {
-        inherit config pkgs;
-      };
-  in
-  {
-    # Build darwin flake using:
-    # $ darwin-rebuild build --flake .#bilbo
-    darwinConfigurations.mac = nix-darwin.lib.darwinSystem {
-      modules = [
-        # TODO: fix this
-        # ({ config, pkgs, ... }: {
-        #   system.configurationRevision = self.rev or self.dirtyRev or null;
-        # })
-        macConfiguration
-        nix-homebrew.darwinModules.nix-homebrew
-        home-manager.darwinModules.home-manager {
-          home-manager.useGlobalPkgs = true;
-          home-manager.useUserPackages = true;
-          home-manager.verbose = true;
-          home-manager.users.cdenneen = commonHomeConfig;
-        }
-      ];
-    };
-
-    # Expose the package set, including overlays, for convenience.
-    darwinPackages = self.darwinConfigurations.mac.pkgs;
-
-    nixosConfigurations.linux = nixpkgs.lib.nixosSystem {
-      modules = [
-        nixosConfiguration
-        home-manager.nixosModules.home-manager {
-          home-manager.useGlobalPkgs = true;
-          home-manager.useUserPackages = true;
-          home-manager.users.cdenneen = commonHomeConfig;
-        }
-      ];
-    };
+    darwinConfigurations = nixpkgs.lib.genAttrs darwinSystems (system: let
+      user = "%USER%";
+    in
+      darwin.lib.darwinSystem {
+        inherit system;
+        specialArgs = inputs;
+        modules = [
+          home-manager.darwinModules.home-manager
+          nix-homebrew.darwinModules.nix-homebrew
+          {
+            nix-homebrew = {
+              inherit user;
+              enable = true;
+              taps = {
+                "homebrew/homebrew-core" = homebrew-core;
+                "homebrew/homebrew-cask" = homebrew-cask;
+                "homebrew/homebrew-bundle" = homebrew-bundle;
+              };
+              mutableTaps = false;
+              autoMigrate = true;
+            };
+          }
+          ./hosts/darwin
+        ];
+      }
+    );
+    nixosConfigurations = nixpkgs.lib.genAttrs linuxSystems (system: let
+      user = "%USER%";
+    in
+      nixpkgs.lib.nixosSystem {
+        inherit system;
+        specialArgs = inputs;
+        modules = [
+          home-manager.nixosModules.home-manager
+          ./hosts/nixos
+        ];
+      });
   };
 }
