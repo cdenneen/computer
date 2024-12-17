@@ -39,49 +39,52 @@
 
   outputs = inputs @ { self, nix-darwin, nixpkgs, nix-homebrew, homebrew-bundle, homebrew-core, homebrew-cask, home-manager }:
 
-  let
-    user = "%USER%";
-    linuxSystems = [ "x86_64-linux" "aarch64-linux" ];
-    darwinSystems = [ "x86_64-darwin" "aarch64-darwin" ];
-    forAllSystems = f: nixpkgs.lib.getAttrs (linuxSystems ++ darwinSystems) f;
-
-    darwinConfigurations = nixpkgs.lib.genAttrs darwinSystems (system: let
+    let
       user = "%USER%";
+      linuxSystems = [ "x86_64-linux" "aarch64-linux" ];
+      darwinSystems = [ "x86_64-darwin" "aarch64-darwin" ];
+      forAllSystems = f: nixpkgs.lib.getAttrs (linuxSystems ++ darwinSystems) f;
+
     in
-      darwin.lib.darwinSystem {
-        inherit system;
-        specialArgs = inputs;
-        modules = [
-          home-manager.darwinModules.home-manager
-          nix-homebrew.darwinModules.nix-homebrew
-          {
-            nix-homebrew = {
-              inherit user;
-              enable = true;
-              taps = {
-                "homebrew/homebrew-core" = homebrew-core;
-                "homebrew/homebrew-cask" = homebrew-cask;
-                "homebrew/homebrew-bundle" = homebrew-bundle;
+    {
+      darwinConfigurations = nixpkgs.lib.genAttrs darwinSystems (system: let
+        user = "%USER%";
+      in
+        darwin.lib.darwinSystem {
+          inherit system;
+          specialArgs = inputs;
+          modules = [
+            home-manager.darwinModules.home-manager
+            nix-homebrew.darwinModules.nix-homebrew
+            {
+              nix-homebrew = {
+                inherit user;
+                enable = true;
+                taps = {
+                  "homebrew/homebrew-core" = homebrew-core;
+                  "homebrew/homebrew-cask" = homebrew-cask;
+                  "homebrew/homebrew-bundle" = homebrew-bundle;
+                };
+                mutableTaps = false;
+                autoMigrate = true;
               };
-              mutableTaps = false;
-              autoMigrate = true;
-            };
-          }
-          ./hosts/darwin
-        ];
-      }
-    );
+            }
+            ./hosts/darwin
+          ];
+        }
+      );
 
-    nixosConfigurations = nixpkgs.lib.genAttrs linuxSystems (system: let
-      user = "%USER%";
-    in
-      nixpkgs.lib.nixosSystem {
-        inherit system;
-        specialArgs = inputs;
-        modules = [
-          home-manager.nixosModules.home-manager
-          ./hosts/nixos
-        ];
-      }
-   );
+      nixosConfigurations = nixpkgs.lib.genAttrs linuxSystems (system: let
+        user = "%USER%";
+      in
+        nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = inputs;
+          modules = [
+            home-manager.nixosModules.home-manager
+            ./hosts/nixos
+          ];
+        }
+      );
+   };
 }
