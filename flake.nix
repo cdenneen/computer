@@ -39,7 +39,7 @@
     };
   };
 
-  outputs = inputs @ { self, darwin, nixpkgs, nix-homebrew, homebrew-bundle, homebrew-core, homebrew-cask, home-manager }:
+  outputs = inputs @ { self, darwin, nix-homebrew, homebrew-bundle, homebrew-core, homebrew-cask, home-manager, nixpkgs }:
 
     let
       user = "%USER%";
@@ -76,10 +76,10 @@
         }
       );
 
-      nixosConfigurations = nixpkgs.lib.genAttrs linuxSystems (system: let
+      homeManagerConfigurations = nixpkgs.lib.genAttrs linuxSystems (system: let
         user = "%USER%";
       in
-        nixpkgs.lib.nixosSystem {
+        home-manager.lib.homeManagerConfiguration {
           inherit system;
           specialArgs = inputs;
           modules = [
