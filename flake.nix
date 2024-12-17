@@ -41,8 +41,8 @@
 
   let
     user = "%USER%";
-    linuxSystems = [ "x86_64-linux", "aarch64-linux" ];
-    darwinSystems = [ "x86_64-darwin", "aarch64-darwin" ];
+    linuxSystems = [ "x86_64-linux" "aarch64-linux" ];
+    darwinSystems = [ "x86_64-darwin" "aarch64-darwin" ];
     forAllSystems = f: nixpkgs.lib.getAttrs (linuxSystems ++ darwinSystems) f;
 
     darwinConfigurations = nixpkgs.lib.genAttrs darwinSystems (system: let
