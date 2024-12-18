@@ -76,7 +76,7 @@
         }
       );
 
-      homeManagerConfigurations = nixpkgs.lib.genAttrs linuxSystems (system: let
+      homeConfigurations = nixpkgs.lib.genAttrs linuxSystems (system: let
         user = "%USER%";
       in
         home-manager.lib.homeManagerConfiguration {
