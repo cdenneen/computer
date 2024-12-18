@@ -14,7 +14,6 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-
     darwin = {
       url = "github:LnL7/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -32,29 +31,25 @@
       url = "github:homebrew/homebrew-cask";
       flake = false;
     };
-
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = inputs @ { self, darwin, nix-homebrew, homebrew-bundle, homebrew-core, homebrew-cask, home-manager, nixpkgs }:
+  outputs = inputs @ { self, darwin, nix-homebrew, homebrew-bundle, homebrew-core, homebrew-cask, home-manager, nixpkgs, flake-utils }:
 
     let
+      utils = flake-utils;
       user = "%USER%";
-      linuxSystems = [ "x86_64-linux" "aarch64-linux" ];
-      darwinSystems = [ "x86_64-darwin" "aarch64-darwin" ];
-      forAllSystems = f: nixpkgs.lib.getAttrs (linuxSystems ++ darwinSystems) f;
-
     in
-    {
-      darwinConfigurations = nixpkgs.lib.genAttrs darwinSystems (system: let
-        user = "%USER%";
+    utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
       in
-        darwin.lib.darwinSystem {
-          inherit system;
-          specialArgs = inputs;
+      {
+        darwinConfigurations.mac = darwin.lib.darwinSystem {
           modules = [
             home-manager.darwinModules.home-manager
             nix-homebrew.darwinModules.nix-homebrew
@@ -73,28 +68,17 @@
             }
             ./hosts/darwin
           ];
-        }
-      );
-
-      defaultPackage = {
-        x86_64-linux = home-manager.defaultPackage.x86_64-linux;
-        aarch64-linux = home-manager.defaultPackage.aarch64-linux;
-        x86_64-darwin = home-manager.defaultPackage.x86_64-darwin;
-        aarch64-darwin = home-manager.defaultPackage.aarch64-darwin;
-      };
-
-      homeConfigurations = nixpkgs.lib.genAttrs linuxSystems (system: let
-        user = "%USER%";
-      in
-        home-manager.lib.homeManagerConfiguration {
-          inherit system;
-          pkgs = import nixpkgs { inherit system; };
-          specialArgs = inputs;
+        };
+        homeConfigurations.${user} = home-manager.lib.homeManagerConfiguration {
+          inherit pkgs;
           modules = [
-            home-manager.nixosModules.home-manager
-            ./hosts/nixos
+            ./home.nix
           ];
-        }
-      );
-   };
+          extraSpecialArgs = {
+            inherit pkgs;
+            inherit user;
+          };
+        };
+      };
+   });
 }
