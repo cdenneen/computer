@@ -49,6 +49,10 @@
         pkgs = nixpkgs.legacyPackages.${system};
       in
       {
+        formatter = pkgs.nixpkgs-fmt;
+
+        # Build darwin flake using:
+        # $ darwin-rebuild build --flake .#mac
         darwinConfigurations.mac = darwin.lib.darwinSystem {
           modules = [
             home-manager.darwinModules.home-manager
@@ -69,13 +73,22 @@
             ./hosts/darwin
           ];
         };
+
+        # Expose the package set, including overlays, for convenience.
         darwinPackages = self.darwinConfigurations.mac.pkgs;
+
         packages = {
           homeConfigurations.${user} = home-manager.lib.homeManagerConfiguration {
             inherit pkgs;
+
+            # Specify your home configuration modules here, for example,
+            # the path to your home.nix.
             modules = [
               ./home.nix
             ];
+
+            # Optionally use extraSpecialArgs
+            # to pass through arguments to home.nix
             extraSpecialArgs = {
               inherit pkgs;
               inherit user;
