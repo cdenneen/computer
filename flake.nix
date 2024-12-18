@@ -76,6 +76,13 @@
         }
       );
 
+      defaultPackage = {
+        x86_64-linux = home-manger.defaultPackage.x86_64-linux;
+        aarch64-linux = home-manager.defaultPackage.aarch64-linux;
+        x86_64-darwin = home-manager.defaultPackage.x86_64-darwin;
+        aarch64-darwin = home-manager.defaultPackage.aarch64-darwin;
+      }
+
       homeConfigurations = nixpkgs.lib.genAttrs linuxSystems (system: let
         user = "%USER%";
       in
