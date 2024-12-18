@@ -69,14 +69,17 @@
             ./hosts/darwin
           ];
         };
-        homeConfigurations.${user} = home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
-          modules = [
-            ./home.nix
-          ];
-          extraSpecialArgs = {
+        darwinPackages = self.darwinConfigurations.mac.pkgs;
+        packages = {
+          homeConfigurations.${user} = home-manager.lib.homeManagerConfiguration {
             inherit pkgs;
-            inherit user;
+            modules = [
+              ./home.nix
+            ];
+            extraSpecialArgs = {
+              inherit pkgs;
+              inherit user;
+            };
           };
         };
       });
