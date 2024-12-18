@@ -88,6 +88,7 @@
       in
         home-manager.lib.homeManagerConfiguration {
           inherit system;
+          pkgs = import nixpkgs { inherit system; };
           specialArgs = inputs;
           modules = [
             home-manager.nixosModules.home-manager
